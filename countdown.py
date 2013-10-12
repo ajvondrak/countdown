@@ -17,7 +17,7 @@ I was watching the show and decided that it'd be easy for a computer to win it.
 
 from operator import add, sub, mul, div
 
-__all__ = ['letters_round', 'numbers_round', 'conundrum']
+__all__ = ['letters_round', 'numbers_round', 'teaser', 'conundrum']
 
 words = [w.strip() for w in open('/usr/share/dict/words').readlines()]
 words = [w for w in words if len(w) <= len('countdown')]
@@ -49,6 +49,14 @@ def same_letters(word, letters):
 
 def enough_of_each_letter(word, letters):
     return all(word.count(l) <= letters.count(l) for l in letters)
+
+#####################
+### Teaser        ###
+#####################
+
+def teaser(clue):
+    for word in possible_words(clue):
+        print(word)
 
 #####################
 ### Numbers Round ###
@@ -88,3 +96,12 @@ def combine(op, formulae, index1, index2):
 
 def divisible(numerator, denominator):
     return denominator != 0 and numerator % denominator == 0
+
+#####################
+### Conundrum     ###
+#####################
+
+def conundrum(anagram):
+    for word in words:
+        if anagram == ''.join(sorted(word)):
+            print(word)
