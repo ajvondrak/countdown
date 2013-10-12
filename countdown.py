@@ -15,8 +15,6 @@ Quoth https://en.wikipedia.org/wiki/Countdown_%28game_show%29
 I was watching the show and decided that it'd be easy for a computer to win it.
 """
 
-from operator import add, sub, mul, div
-
 __all__ = ['letters_round', 'numbers_round', 'teaser', 'conundrum']
 
 words = [w.strip() for w in open('/usr/share/dict/words').readlines()]
@@ -62,39 +60,41 @@ def teaser(clue):
 ### Numbers Round ###
 #####################
 
-operators_by_popularity = (add, mul, sub, div)
-
-op_sym = {add:'+', sub:'-', mul:'*', div:'/'}
+operators_by_popularity = ('+', '*', '-', '/')
 
 def numbers_round(numbers, target):
-    return formulate(target, [(n, str(n)) for n in numbers])
+    print(formulate(map(str, numbers), target))
 
-def formulate(target, formulae):
-    if any([number == target for number, formula in formulae]):
-        return formula
+def commutative(op):
+    return op in ('+', '*')
+
+def formulate(formulae, target):
+    answer = next((f for f in formulae if eval(f) == target), None)
+    if answer:
+        return answer
     for index1 in range(len(formulae)):
         for index2 in range(len(formulae)):
             if index1 == index2:
                 continue
             for op in operators_by_popularity:
+                if commutative(op) and index1 > index2:
+                    # Already computed an equivalent branch of the recursion
+                    # tree back when index1 < index2
+                    continue
                 new_formulae = combine(op, formulae, index1, index2)
-                possible_answer = formulate(target, new_formulae)
+                possible_answer = formulate(new_formulae, target)
                 if possible_answer:
                     return possible_answer
 
 def combine(op, formulae, index1, index2):
-    indices = (index1, index2)
-    number1, formula1 = formulae[index1]
-    number2, formula2 = formulae[index2]
-    if op == div and not divisible(number1, number2):
+    if op == '/' and not divisible(formulae[index1], formulae[index2]):
         return []
-    new_formulae = [f for i, f in enumerate(formulae) if i not in indices]
-    new_number = op(number1, number2)
-    new_formula = '(%s %s %s)' % (formula1, op_sym[op], formula2)
-    new_formulae.append((new_number, new_formula))
-    return new_formulae
+    combined = [f for i, f in enumerate(formulae) if i not in (index1, index2)]
+    combined.append('(%s %s %s)' % (formulae[index1], op, formulae[index2]))
+    return combined
 
-def divisible(numerator, denominator):
+def divisible(numerator_str, denominator_str):
+    numerator, denominator = eval(numerator_str), eval(denominator_str)
     return denominator != 0 and numerator % denominator == 0
 
 #####################
