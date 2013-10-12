@@ -15,6 +15,9 @@ Quoth https://en.wikipedia.org/wiki/Countdown_%28game_show%29
 I was watching the show and decided that it'd be easy for a computer to win it.
 """
 
+from __future__ import print_function
+
+
 __all__ = ['letters_round', 'numbers_round', 'teaser', 'conundrum']
 
 words = [w.strip() for w in open('/usr/share/dict/words').readlines()]
@@ -40,13 +43,13 @@ def possible_words(letters):
             yield word
 
 def could_form(word, letters):
-    return same_letters(word, letters) and enough_of_each_letter(word, letters)
+    return uses_letters(word, letters) and enough_of_each_letter(word, letters)
 
-def same_letters(word, letters):
+def uses_letters(word, letters):
     return set(word).issubset(set(letters))
 
 def enough_of_each_letter(word, letters):
-    return all(word.count(l) <= letters.count(l) for l in letters)
+    return all(word.count(l) <= letters.count(l) for l in set(letters))
 
 #####################
 ### Numbers Round ###
@@ -57,30 +60,29 @@ operators_by_popularity = ('+', '*', '-', '/')
 def numbers_round(numbers, target):
     print(formulate(map(str, numbers), target))
 
-def commutative(op):
-    return op in ('+', '*')
-
 def formulate(formulae, target):
     answer = next((f for f in formulae if eval(f) == target), None)
     if answer:
         return answer
-    for index1 in range(len(formulae)):
-        for index2 in range(len(formulae)):
-            if index1 == index2:
+    for i1, f1 in enumerate(formulae):
+        for i2, f2 in enumerate(formulae):
+            if i1 == i2:
                 continue
             for op in operators_by_popularity:
-                if commutative(op) and index1 > index2:
-                    # Already computed an equivalent branch of the recursion
-                    # tree back when index1 < index2
+                if op == '+' and (i1 > i2 or eval(f1) == 0 or eval(f2) == 0):
                     continue
-                new_formulae = combine(op, formulae, index1, index2)
+                if op == '-' and eval(f2) == 0:
+                    continue
+                if op == '*' and (i1 > i2 or eval(f1) == 1 or eval(f2) == 1):
+                    continue
+                if op == '/' and (eval(f2) == 1 or not divisible(f1, f2)):
+                    continue
+                new_formulae = combine(op, formulae, i1, i2)
                 possible_answer = formulate(new_formulae, target)
                 if possible_answer:
                     return possible_answer
 
 def combine(op, formulae, index1, index2):
-    if op == '/' and not divisible(formulae[index1], formulae[index2]):
-        return []
     combined = [f for i, f in enumerate(formulae) if i not in (index1, index2)]
     combined.append('(%s %s %s)' % (formulae[index1], op, formulae[index2]))
     return combined
@@ -104,3 +106,31 @@ def teaser(clue):
 
 def conundrum(word):
     print(next(anagrams(word)))
+
+##########################
+### Play the game      ###
+##########################
+
+def print_row(textwidth, cells):
+    cell = '{:^3}'
+    border = '+-----' * len(cells) + '+'
+    row = '| ' + ' | '.join([cell] * len(cells)) + ' |'
+    print(border.center(textwidth))
+    print(row.format(*cells).center(textwidth))
+    print(border.center(textwidth))
+    print()
+
+
+def play_numbers_round():
+    import random
+    large_numbers = [25, 50, 75, 100]
+    small_numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] * 2
+    numbers = random.sample(large_numbers + small_numbers, 6)
+    target = random.randint(1, 999)
+    print_row(40, [target])
+    print_row(40, numbers)
+    numbers_round(numbers, target)
+
+
+if __name__ == '__main__':
+    play_numbers_round()
