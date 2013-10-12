@@ -49,14 +49,6 @@ def enough_of_each_letter(word, letters):
     return all(word.count(l) <= letters.count(l) for l in letters)
 
 #####################
-### Teaser        ###
-#####################
-
-def teaser(clue):
-    for word in possible_words(clue):
-        print(word)
-
-#####################
 ### Numbers Round ###
 #####################
 
@@ -97,11 +89,18 @@ def divisible(numerator_str, denominator_str):
     numerator, denominator = eval(numerator_str), eval(denominator_str)
     return denominator != 0 and numerator % denominator == 0
 
-#####################
-### Conundrum     ###
-#####################
+##########################
+### Teaser & Conundrum ###
+##########################
 
-def conundrum(anagram):
-    for word in words:
-        if anagram == ''.join(sorted(word)):
-            print(word)
+def anagrams(word):
+    for anagram in words:
+        if word == ''.join(sorted(anagram)):
+            yield anagram
+
+def teaser(clue):
+    for anagram in anagrams(clue):
+        print('It might be: ' + anagram)
+
+def conundrum(word):
+    print(next(anagrams(word)))
