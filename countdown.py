@@ -16,12 +16,16 @@ I was watching the show and decided that it'd be easy for a computer to win it.
 """
 
 from __future__ import print_function
-
+from collections import deque
+import random
+import timeit
 
 __all__ = ['letters_round', 'numbers_round', 'teaser', 'conundrum']
 
 words = [w.strip() for w in open('/usr/share/dict/words').readlines()]
 words = [w for w in words if len(w) <= len('countdown')]
+
+operators = ('+', '*', '-', '/')
 
 #####################
 ### Letters Round ###
@@ -55,20 +59,46 @@ def enough_of_each_letter(word, letters):
 ### Numbers Round ###
 #####################
 
-operators_by_popularity = ('+', '*', '-', '/')
-
 def numbers_round(numbers, target):
-    print(formulate(map(str, numbers), target))
+    formulate = 'print(%s(map(str, {}), {}))'.format(numbers, target)
+    import_ = 'from __main__ import backtrack_formulate, bfs_formulate'
+    backtrack = timeit.Timer(formulate % 'backtrack_formulate', import_)
+    bfs = timeit.Timer(formulate % 'bfs_formulate', import_)
+    print('\nTime (backtrack):', backtrack.timeit(number=1), 'seconds\n')
+    print('\nTime (bfs):      ', bfs.timeit(number=1), 'seconds\n')
 
-def formulate(formulae, target):
-    answer = next((f for f in formulae if eval(f) == target), None)
+def backtrack_formulate(formulae, target):
+    answer = find_formula_for(target, formulae)
     if answer:
         return answer
+    for new_formulae in possible_formulae(formulae):
+        answer = backtrack_formulate(new_formulae, target)
+        if answer:
+            return answer
+
+def bfs_formulate(formulae, target):
+    formulae = tuple(formulae)
+    visited = set([formulae])
+    worklist = deque([formulae])
+    while worklist:
+        new_formulae = worklist.popleft()
+        answer = find_formula_for(target, new_formulae)
+        if answer:
+            return answer
+        for newer_formulae in possible_formulae(new_formulae):
+            if newer_formulae not in visited:
+                visited.add(newer_formulae)
+                worklist.append(newer_formulae)
+
+def find_formula_for(target, formulae):
+    return next((f for f in formulae if eval(f) == target), None)
+
+def possible_formulae(formulae):
     for i1, f1 in enumerate(formulae):
         for i2, f2 in enumerate(formulae):
             if i1 == i2:
                 continue
-            for op in operators_by_popularity:
+            for op in operators:
                 if op == '+' and (i1 > i2 or eval(f1) == 0 or eval(f2) == 0):
                     continue
                 if op == '-' and eval(f2) == 0:
@@ -77,15 +107,12 @@ def formulate(formulae, target):
                     continue
                 if op == '/' and (eval(f2) == 1 or not divisible(f1, f2)):
                     continue
-                new_formulae = combine(op, formulae, i1, i2)
-                possible_answer = formulate(new_formulae, target)
-                if possible_answer:
-                    return possible_answer
+                yield combine(op, formulae, i1, i2)
 
 def combine(op, formulae, index1, index2):
     combined = [f for i, f in enumerate(formulae) if i not in (index1, index2)]
     combined.append('(%s %s %s)' % (formulae[index1], op, formulae[index2]))
-    return combined
+    return tuple(combined)
 
 def divisible(numerator_str, denominator_str):
     numerator, denominator = eval(numerator_str), eval(denominator_str)
@@ -122,7 +149,6 @@ def print_row(textwidth, cells):
 
 
 def play_numbers_round():
-    import random
     large_numbers = [25, 50, 75, 100]
     small_numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] * 2
     numbers = random.sample(large_numbers + small_numbers, 6)
