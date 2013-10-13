@@ -97,12 +97,12 @@ def divisible(numerator_str, denominator_str):
 
 def anagrams(word):
     for anagram in words:
-        if word == ''.join(sorted(anagram)):
+        if ''.join(sorted(word)) == ''.join(sorted(anagram)):
             yield anagram
 
 def teaser(clue):
     for anagram in anagrams(clue):
-        print('It might be: ' + anagram)
+        print('It might be:', anagram)
 
 def conundrum(word):
     print(next(anagrams(word)))
