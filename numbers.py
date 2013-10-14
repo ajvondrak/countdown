@@ -1,7 +1,6 @@
 from __future__ import print_function
 from collections import deque
 import countdown.clock as clock
-import time
 
 
 operators = ('+', '*', '-', '/')
@@ -9,18 +8,20 @@ operators = ('+', '*', '-', '/')
 
 def numbers_round(numbers, target, strategy):
     numbers = map(str, numbers)
-    seconds, formula = profile(strategy, numbers, target)
-    print(eval(formula))
+    print('Using', strategy.__name__, 'strategy...')
+    seconds, formula = clock.profile(strategy, numbers, target)
+    number_reached = eval(formula)
+    print(number_reached)
     print(formula)
     print('Time:', seconds, 'seconds')
-
-
-def profile(strategy, *args):
-    print('Using', strategy.__name__, 'strategy...')
-    start = time.time()
-    formula = strategy(*args)
-    end = time.time()
-    return end - start, formula
+    if number_reached == target:
+        return 10
+    elif abs(number_reached - target) <= 5:
+        return 7
+    elif abs(number_reached - target) <= 10:
+        return 5
+    else:
+        return 0
 
 
 def backtrack(formulae, target):

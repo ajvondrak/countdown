@@ -2,13 +2,20 @@ from __future__ import print_function
 
 words = [w.strip() for w in open('/usr/share/dict/words').readlines()]
 words = [w for w in words if len(w) <= len('countdown')]
+words = [w for w in words if w.isalpha() and w.islower()]
 
 def letters_round(letters):
+    # I would wrap this stuff in countdown.clock, but it runs so fast that it's
+    # not really a concern.
     winning_length = len(winning_word(letters))
     print(winning_length)
     for word in possible_words(letters):
         if len(word) == winning_length:
             print(word)
+    if winning_length == 9:
+        # Double score for using all nine letters
+        return 18
+    return winning_length
 
 def winning_word(letters):
     return max(possible_words(letters), key=len)
