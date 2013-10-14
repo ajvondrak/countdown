@@ -16,8 +16,6 @@ I was watching the show and decided that it'd be easy for a computer to win it.
 """
 
 # TODO
-# clean up use of eval - class Expression: ... (which best_so_far can be, too)
-# refactor signal stuff
 # see about signal-ing the letters stuff, even though it shouldn't be an issue
 # simulation flesh-out: point system?  human input vs playing against itself?
 #   don't want to sink too much time into it...
@@ -48,7 +46,9 @@ def play_numbers_round():
     target = 773
     print_row(40, [target])
     print_row(40, numbers)
-    numbers_round(numbers, target)
+    numbers_round(numbers, target, backtrack)
+    print()
+    numbers_round(numbers, target, bfs)
 
 
 if __name__ == '__main__':
