@@ -18,6 +18,7 @@ I was watching the show and decided that it'd be easy for a computer to win it.
 from __future__ import print_function
 from collections import deque
 import random
+import signal
 import timeit
 
 __all__ = ['letters_round', 'numbers_round', 'teaser', 'conundrum']
@@ -67,31 +68,74 @@ def numbers_round(numbers, target):
     print('\nTime (backtrack):', backtrack.timeit(number=1), 'seconds\n')
     print('\nTime (bfs):      ', bfs.timeit(number=1), 'seconds\n')
 
+class TimeIsUp(Exception):
+    pass
+
+def time_is_up(signum, frame):
+    raise TimeIsUp()
+
+def countdown():
+    """Start a 30 second countdown to when the TimeIsUp exception is thrown."""
+    signal.signal(signal.SIGALRM, time_is_up)
+    signal.alarm(30)
+
+def reset_countdown():
+    signal.alarm(0)
+
+class BestSoFar:
+    def __init__(self):
+        self.value = '0'
+
 def backtrack_formulate(formulae, target):
-    answer = find_formula_for(target, formulae)
-    if answer:
-        return answer
-    for new_formulae in possible_formulae(formulae):
-        answer = backtrack_formulate(new_formulae, target)
-        if answer:
-            return answer
+    best_so_far = BestSoFar()
+    def backtrack(formulae):
+        closest = closest_to(target, formulae)
+        if eval(closest) == target:
+            return closest
+        # need to set a reference here, because just `best_so_far` would be
+        # treated like a local variable
+        best_so_far.value = closest_to(target, (best_so_far.value, closest))
+        for new_formulae in possible_formulae(formulae):
+            answer = backtrack(new_formulae)
+            if answer:
+                return answer
+    countdown()
+    try:
+        return backtrack(formulae)
+    except TimeIsUp:
+        print('Could only find', eval(best_so_far.value))
+        return best_so_far.value
+    finally:
+        reset_countdown()
 
 def bfs_formulate(formulae, target):
+    best_so_far = '0'
     formulae = tuple(formulae)
     visited = set([formulae])
     worklist = deque([formulae])
-    while worklist:
-        new_formulae = worklist.popleft()
-        answer = find_formula_for(target, new_formulae)
-        if answer:
-            return answer
-        for newer_formulae in possible_formulae(new_formulae):
-            if newer_formulae not in visited:
-                visited.add(newer_formulae)
-                worklist.append(newer_formulae)
+    countdown()
+    try:
+        while worklist:
+            new_formulae = worklist.popleft()
+            closest = closest_to(target, new_formulae)
+            if eval(closest) == target:
+                return closest
+            best_so_far = closest_to(target, (best_so_far, closest))
+            for newer_formulae in possible_formulae(new_formulae):
+                if newer_formulae not in visited:
+                    visited.add(newer_formulae)
+                    worklist.append(newer_formulae)
+    except TimeIsUp:
+        print('Could only find', eval(best_so_far))
+        return best_so_far
+    finally:
+        reset_countdown()
 
-def find_formula_for(target, formulae):
-    return next((f for f in formulae if eval(f) == target), None)
+def closest_to(target, formulae):
+    return min(formulae, key=distance_to(target))
+
+def distance_to(target):
+    return lambda formula: abs(target - eval(formula))
 
 def possible_formulae(formulae):
     for i1, f1 in enumerate(formulae):
@@ -151,8 +195,10 @@ def print_row(textwidth, cells):
 def play_numbers_round():
     large_numbers = [25, 50, 75, 100]
     small_numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] * 2
-    numbers = random.sample(large_numbers + small_numbers, 6)
-    target = random.randint(1, 999)
+    # numbers = random.sample(large_numbers + small_numbers, 6)
+    numbers = [9, 1, 6, 4, 4, 25]
+    # target = random.randint(1, 999)
+    target = 773
     print_row(40, [target])
     print_row(40, numbers)
     numbers_round(numbers, target)
