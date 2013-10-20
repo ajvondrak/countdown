@@ -1,6 +1,7 @@
 from __future__ import print_function
+from countdown.config import *
 
-words = [w.strip() for w in open('/usr/share/dict/words').readlines()]
+words = [w.strip() for w in open(getDictionaryLocation()).readlines()]
 words = [w for w in words if len(w) <= len('countdown')]
 words = [w for w in words if w.isalpha() and w.islower()]
 
