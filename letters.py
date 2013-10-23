@@ -1,7 +1,14 @@
 from __future__ import print_function
-from countdown.config import *
+import os.path
 
-words = [w.strip() for w in open(getDictionaryLocation()).readlines()]
+words_file = '/usr/share/dict/words'
+while not os.path.isfile(words_file):
+    print("Could not find the dictionary file at '%s'!" % words_file)
+    words_file = raw_input('Please specify the path to your dictionary file: ')
+    words_file = os.path.expanduser(words_file)
+    words_file = os.path.expandvars(words_file)
+
+words = [w.strip() for w in open(words_file)]
 words = [w for w in words if len(w) <= len('countdown')]
 words = [w for w in words if w.isalpha() and w.islower()]
 
